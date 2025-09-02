@@ -83,15 +83,16 @@ where
     F: FnMut(usize) -> f64,
     R: Rng,
 {
-    fn wait_for_input(&mut self) -> Vec<Command<Self, JsOutput, F, R>> {
-        serde_wasm_bindgen::from_value::<Vec<String>>(
-            self.wait_for_input.call0(&self.context).unwrap(),
+    fn wait_for_input(&mut self) -> Command<Self, JsOutput, F, R> {
+        convert_string_to_command(
+            &self
+                .wait_for_input
+                .call0(&self.context)
+                .unwrap()
+                .as_string()
+                .unwrap(),
         )
         .unwrap()
-        .iter()
-        // Include convert &String to &str
-        .filter_map(|s| convert_string_to_command(s))
-        .collect()
     }
 }
 
