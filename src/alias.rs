@@ -150,6 +150,18 @@ impl From<SlotProbability> for pachislo::config::SlotProbability {
 }
 
 #[wasm_bindgen]
+impl SlotProbability {
+    #[wasm_bindgen(constructor)]
+    pub fn new(win: f64, fake_win: f64, fake_lose: f64) -> Self {
+        SlotProbability {
+            win,
+            fake_win,
+            fake_lose,
+        }
+    }
+}
+
+#[wasm_bindgen]
 impl Probability {
     #[wasm_bindgen(constructor)]
     pub fn new(
@@ -191,6 +203,18 @@ impl From<BallsConfig> for pachislo::config::BallsConfig {
             init_balls: config.init_balls,
             incremental_balls: config.incremental_balls,
             incremental_rush: config.incremental_rush,
+        }
+    }
+}
+
+#[wasm_bindgen]
+impl BallsConfig {
+    #[wasm_bindgen(constructor)]
+    pub fn new(init_balls: usize, incremental_balls: usize, incremental_rush: usize) -> Self {
+        BallsConfig {
+            init_balls,
+            incremental_balls,
+            incremental_rush,
         }
     }
 }
