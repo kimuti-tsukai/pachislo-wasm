@@ -28,19 +28,14 @@ where
 }
 
 #[wasm_bindgen]
-pub struct JsInput {
-    context: JsValue,
-    wait_for_input: Function,
-}
+#[derive(Default)]
+pub struct JsInput;
 
 #[wasm_bindgen]
 impl JsInput {
     #[wasm_bindgen(constructor)]
-    pub fn new(context: JsValue, wait_for_input: Function) -> Self {
-        JsInput {
-            context,
-            wait_for_input,
-        }
+    pub fn new() -> Self {
+        JsInput
     }
 }
 
@@ -84,15 +79,7 @@ where
     R: Rng,
 {
     fn wait_for_input(&mut self) -> Command<Self, JsOutput, F, R> {
-        convert_string_to_command(
-            &self
-                .wait_for_input
-                .call0(&self.context)
-                .unwrap()
-                .as_string()
-                .unwrap(),
-        )
-        .unwrap()
+        unreachable!()
     }
 }
 
@@ -182,7 +169,9 @@ impl WasmGame {
     }
 
     #[wasm_bindgen]
-    pub fn run_step(&mut self) -> ControlFlow {
-        self.game.run_step().into()
+    pub fn run_step_with_command(&mut self, command: String) -> ControlFlow {
+        let command = convert_string_to_command(&command).unwrap();
+
+        self.game.run_step_with_command(command).into()
     }
 }
