@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use js_sys::Function;
 use pachislo::{
     Game,
@@ -154,9 +156,11 @@ impl From<std::ops::ControlFlow<()>> for ControlFlow {
     }
 }
 
+type InnerGame = Game<JsInput, JsOutput, Box<dyn FnMut(usize) -> f64>>;
+
 #[wasm_bindgen]
 pub struct WasmGame {
-    game: Game<JsInput, JsOutput, Box<dyn FnMut(usize) -> f64>>,
+    game: Mutex<InnerGame>,
 }
 
 #[wasm_bindgen]
@@ -164,14 +168,18 @@ impl WasmGame {
     #[wasm_bindgen(constructor)]
     pub fn new(input: JsInput, output: JsOutput, config: Config) -> Self {
         Self {
-            game: Game::new(config.into(), input, output).unwrap(),
+            game: Mutex::new(Game::new(config.into(), input, output).unwrap()),
         }
     }
 
     #[wasm_bindgen]
-    pub fn run_step_with_command(&mut self, command: String) -> ControlFlow {
+    pub fn run_step_with_command(&self, command: String) -> ControlFlow {
         let command = convert_string_to_command(&command).unwrap();
 
-        self.game.run_step_with_command(command).into()
+        self.game
+            .lock()
+            .unwrap()
+            .run_step_with_command(command)
+            .into()
     }
 }
