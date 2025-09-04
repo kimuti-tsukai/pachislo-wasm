@@ -341,3 +341,91 @@ impl WasmGame {
             .into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Only test functions that don't require WebAssembly bindings
+    // WebAssembly-specific tests should be run with wasm-pack test
+
+    #[test]
+    fn test_convert_string_to_command() {
+        // Test valid commands
+        assert!(
+            convert_string_to_command::<Box<dyn FnMut(usize) -> f64>, rand::rngs::ThreadRng>(
+                "LaunchBall"
+            )
+            .is_some()
+        );
+        assert!(
+            convert_string_to_command::<Box<dyn FnMut(usize) -> f64>, rand::rngs::ThreadRng>(
+                "CauseLottery"
+            )
+            .is_some()
+        );
+        assert!(
+            convert_string_to_command::<Box<dyn FnMut(usize) -> f64>, rand::rngs::ThreadRng>(
+                "StartGame"
+            )
+            .is_some()
+        );
+        assert!(
+            convert_string_to_command::<Box<dyn FnMut(usize) -> f64>, rand::rngs::ThreadRng>(
+                "FinishGame"
+            )
+            .is_some()
+        );
+        assert!(
+            convert_string_to_command::<Box<dyn FnMut(usize) -> f64>, rand::rngs::ThreadRng>(
+                "Finish"
+            )
+            .is_some()
+        );
+
+        // Test invalid command
+        assert!(
+            convert_string_to_command::<Box<dyn FnMut(usize) -> f64>, rand::rngs::ThreadRng>(
+                "InvalidCommand"
+            )
+            .is_none()
+        );
+        assert!(
+            convert_string_to_command::<Box<dyn FnMut(usize) -> f64>, rand::rngs::ThreadRng>("")
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn test_js_input_creation() {
+        let input = JsInput::new();
+        // Since JsInput is a unit struct, we mainly test that it can be created
+        assert_eq!(std::mem::size_of_val(&input), 0);
+    }
+
+    #[test]
+    fn test_js_input_default() {
+        let input = JsInput::default();
+        // Test that default implementation works
+        assert_eq!(std::mem::size_of_val(&input), 0);
+    }
+
+    #[test]
+    fn test_control_flow_conversion() {
+        let continue_flow: ControlFlow = std::ops::ControlFlow::Continue(()).into();
+        let break_flow: ControlFlow = std::ops::ControlFlow::Break(()).into();
+
+        match continue_flow {
+            ControlFlow::Continue => assert!(true),
+            ControlFlow::Break => panic!("Expected Continue"),
+        }
+
+        match break_flow {
+            ControlFlow::Continue => panic!("Expected Break"),
+            ControlFlow::Break => assert!(true),
+        }
+    }
+
+    // WebAssembly-specific tests are disabled for non-WASM targets
+    // These should be run using `wasm-pack test` in a browser environment
+}

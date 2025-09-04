@@ -18,3 +18,7 @@ rand = "0.9.2"
 [dependencies.getrandom]
 version = "0.3.3"
 features = ["wasm_js"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.43"
+web-sys = "0.3.77"

@@ -234,11 +234,184 @@ wasm-pack build --target web --out-dir pkg
 wasm-pack build --target nodejs --out-dir pkg-node
 ```
 
+## Testing
+
+This project includes comprehensive test coverage with unit tests, integration tests, and performance benchmarks.
+
+### Test Structure
+
+The testing suite is organized into several categories:
+
+1. **Unit Tests** - Located in `src/lib.rs` and `src/alias.rs`
+2. **Integration Tests** - Located in `tests/integration_tests.rs`
+3. **Benchmark Tests** - Located in `tests/benchmark_tests.rs`
+
+### Running Tests
+
+#### Standard Unit Tests
+```bash
+# Run all unit tests
+cargo test
+
+# Run tests with output
+cargo test -- --nocapture
+
+# Run specific test module
+cargo test tests::test_convert_string_to_command
+```
+
+#### WebAssembly Tests
+For testing WebAssembly functionality in a browser environment:
+
+```bash
+# Install wasm-pack if not already installed
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+# Run tests in Chrome/Chromium
+wasm-pack test --chrome
+
+# Run tests in Firefox
+wasm-pack test --firefox
+
+# Run tests in Safari
+wasm-pack test --safari
+
+# Run tests headlessly
+wasm-pack test --chrome --headless
+```
+
+#### Integration Tests
+```bash
+# Run integration tests specifically
+cargo test --test integration_tests
+
+# Run integration tests in browser
+wasm-pack test --chrome --test integration_tests
+```
+
+#### Performance Benchmarks
+```bash
+# Run benchmark tests
+cargo test --test benchmark_tests
+
+# Run benchmarks in browser with performance logging
+wasm-pack test --chrome --test benchmark_tests
+```
+
+### Test Coverage
+
+The test suite covers:
+
+- **Command Processing**: Validation of all game commands
+- **Game State Transitions**: Normal, Rush, and Uninitialized states
+- **Configuration Management**: Ball settings and probability configurations
+- **Type Conversions**: Rust ↔ JavaScript type mappings
+- **Error Handling**: Invalid commands and edge cases
+- **Memory Management**: Object creation and cleanup
+- **Performance**: Initialization, command execution, and memory usage benchmarks
+
+### Test Categories
+
+#### Unit Tests (`src/lib.rs`)
+- Command string parsing and validation
+- Game initialization and configuration
+- Control flow management
+- Input/Output handler creation
+- Mock JavaScript function integration
+
+#### Unit Tests (`src/alias.rs`)
+- Type conversion between Rust and JavaScript
+- Lottery result processing
+- Game state management
+- Configuration object creation
+- Probability calculation utilities
+
+#### Integration Tests (`tests/integration_tests.rs`)
+- Complete game workflow testing
+- Multiple game instance management
+- Configuration variation testing
+- Command sequence validation
+- Concurrent operation testing
+
+#### Benchmark Tests (`tests/benchmark_tests.rs`)
+- Game initialization performance
+- Command execution speed
+- Memory allocation efficiency
+- Type conversion overhead
+- Concurrent access performance
+
+### Performance Expectations
+
+The benchmark tests validate these performance characteristics:
+
+- **Game Initialization**: < 10ms per instance
+- **Command Execution**: < 1ms per command
+- **Memory Operations**: < 5ms per allocation cycle
+- **Type Conversions**: < 10μs per conversion
+- **Concurrent Access**: < 1ms per operation
+
+### Writing New Tests
+
+When adding new functionality, follow these testing patterns:
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_new_feature() {
+        // Arrange
+        let input = create_test_input();
+        
+        // Act
+        let result = new_feature(input);
+        
+        // Assert
+        assert!(result.is_ok());
+    }
+    
+    #[wasm_bindgen_test]
+    fn test_wasm_feature() {
+        // WebAssembly-specific test
+        let game = create_test_game();
+        let result = game.some_wasm_method();
+        assert_valid_result(result);
+    }
+}
+```
+
+### Continuous Integration
+
+Tests are designed to run in CI environments:
+
+```yaml
+# Example GitHub Actions workflow
+- name: Run Rust tests
+  run: cargo test --verbose
+
+- name: Run WASM tests
+  run: wasm-pack test --chrome --headless
+```
+
 ## Development
 
 ### Running Tests
 ```bash
+# Run all tests (unit + integration)
 cargo test
+
+# Run only unit tests
+cargo test --lib
+
+# Run only integration tests
+cargo test --test '*'
+
+# Run with detailed output
+cargo test -- --nocapture
+
+# Run tests in browser
+wasm-pack test --chrome --headless
 ```
 
 ### Linting

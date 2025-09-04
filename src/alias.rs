@@ -373,3 +373,241 @@ impl From<Config> for pachislo::config::Config<Box<dyn FnMut(usize) -> f64>> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Only test functions that don't require WebAssembly bindings
+    // WebAssembly-specific tests should be run with wasm-pack test
+
+    #[test]
+    fn test_transition_creation() {
+        use pachislo::game::GameState as PachisloGameState;
+        use pachislo::game::Transition as PachisloTransition;
+
+        let before_state = PachisloGameState::Normal { balls: 50 };
+        let after_state = PachisloGameState::Rush {
+            balls: 60,
+            rush_balls: 10,
+            n: 1,
+        };
+
+        let pachislo_transition = PachisloTransition {
+            before: Some(before_state),
+            after: after_state,
+        };
+
+        let transition = Transition::from(pachislo_transition);
+
+        assert!(transition.before.is_some());
+        match transition.before.unwrap() {
+            GameState::Normal { balls } => assert_eq!(balls, 50),
+            _ => panic!("Expected Normal state"),
+        }
+
+        match transition.after {
+            GameState::Rush {
+                balls,
+                rush_balls,
+                n,
+            } => {
+                assert_eq!(balls, 60);
+                assert_eq!(rush_balls, 10);
+                assert_eq!(n, 1);
+            }
+            _ => panic!("Expected Rush state"),
+        }
+    }
+
+    #[test]
+    fn test_game_state_conversions() {
+        use pachislo::game::GameState as PachisloGameState;
+
+        // Test Uninitialized
+        let uninitialized = PachisloGameState::Uninitialized;
+        let converted = GameState::from(uninitialized);
+        assert!(matches!(converted, GameState::Uninitialized));
+
+        // Test Normal
+        let normal = PachisloGameState::Normal { balls: 100 };
+        let converted = GameState::from(normal);
+        match converted {
+            GameState::Normal { balls } => assert_eq!(balls, 100),
+            _ => panic!("Expected Normal state"),
+        }
+
+        // Test Rush
+        let rush = PachisloGameState::Rush {
+            balls: 150,
+            rush_balls: 25,
+            n: 3,
+        };
+        let converted = GameState::from(rush);
+        match converted {
+            GameState::Rush {
+                balls,
+                rush_balls,
+                n,
+            } => {
+                assert_eq!(balls, 150);
+                assert_eq!(rush_balls, 25);
+                assert_eq!(n, 3);
+            }
+            _ => panic!("Expected Rush state"),
+        }
+    }
+
+    #[test]
+    fn test_lottery_result_conversions() {
+        use pachislo::lottery::{
+            Lose as PachisloLose, LotteryResult as PachisloLotteryResult, Win as PachisloWin,
+        };
+
+        // Test Win conversions
+        let pachislo_default_win = PachisloLotteryResult::Win(PachisloWin::Default);
+        let converted_win = LotteryResult::from(pachislo_default_win);
+        match converted_win {
+            LotteryResult::Win(Win::Default) => assert!(true),
+            _ => panic!("Expected Win::Default"),
+        }
+
+        let pachislo_fake_win = PachisloLotteryResult::Win(PachisloWin::FakeWin);
+        let converted_fake_win = LotteryResult::from(pachislo_fake_win);
+        match converted_fake_win {
+            LotteryResult::Win(Win::FakeWin) => assert!(true),
+            _ => panic!("Expected Win::FakeWin"),
+        }
+
+        // Test Lose conversions
+        let pachislo_default_lose = PachisloLotteryResult::Lose(PachisloLose::Default);
+        let converted_lose = LotteryResult::from(pachislo_default_lose);
+        match converted_lose {
+            LotteryResult::Lose(Lose::Default) => assert!(true),
+            _ => panic!("Expected Lose::Default"),
+        }
+
+        let pachislo_fake_lose = PachisloLotteryResult::Lose(PachisloLose::FakeLose);
+        let converted_fake_lose = LotteryResult::from(pachislo_fake_lose);
+        match converted_fake_lose {
+            LotteryResult::Lose(Lose::FakeLose) => assert!(true),
+            _ => panic!("Expected Lose::FakeLose"),
+        }
+    }
+
+    #[test]
+    fn test_lottery_result_is_win() {
+        let win_result = LotteryResult::Win(Win::Default);
+        assert!(win_result.is_win());
+
+        let fake_win_result = LotteryResult::Win(Win::FakeWin);
+        assert!(fake_win_result.is_win());
+
+        let lose_result = LotteryResult::Lose(Lose::Default);
+        assert!(!lose_result.is_win());
+
+        let fake_lose_result = LotteryResult::Lose(Lose::FakeLose);
+        assert!(!fake_lose_result.is_win());
+    }
+
+    #[test]
+    fn test_slot_probability_creation() {
+        let prob = SlotProbability::new(0.1, 0.05, 0.02);
+        assert_eq!(prob.win, 0.1);
+        assert_eq!(prob.fake_win, 0.05);
+        assert_eq!(prob.fake_lose, 0.02);
+    }
+
+    #[test]
+    fn test_slot_probability_conversion() {
+        let slot_prob = SlotProbability::new(0.15, 0.08, 0.03);
+        let pachislo_prob: pachislo::config::SlotProbability = slot_prob.into();
+
+        assert_eq!(pachislo_prob.win, 0.15);
+        assert_eq!(pachislo_prob.fake_win, 0.08);
+        assert_eq!(pachislo_prob.fake_lose, 0.03);
+    }
+
+    #[test]
+    fn test_balls_config_creation() {
+        let config = BallsConfig::new(100, 15, 50);
+        assert_eq!(config.init_balls, 100);
+        assert_eq!(config.incremental_balls, 15);
+        assert_eq!(config.incremental_rush, 50);
+    }
+
+    #[test]
+    fn test_balls_config_conversion() {
+        let balls_config = BallsConfig::new(200, 20, 80);
+        let pachislo_config: pachislo::config::BallsConfig = balls_config.into();
+
+        assert_eq!(pachislo_config.init_balls, 200);
+        assert_eq!(pachislo_config.incremental_balls, 20);
+        assert_eq!(pachislo_config.incremental_rush, 80);
+    }
+
+    // WebAssembly-specific tests (Probability, Config creation/conversion) are disabled for non-WASM targets
+    // These should be run using `wasm-pack test` in a browser environment
+
+    #[test]
+    fn test_probability_edge_cases() {
+        // Test with zero probabilities
+        let zero_prob = SlotProbability::new(0.0, 0.0, 0.0);
+        assert_eq!(zero_prob.win, 0.0);
+        assert_eq!(zero_prob.fake_win, 0.0);
+        assert_eq!(zero_prob.fake_lose, 0.0);
+
+        // Test with maximum probabilities
+        let max_prob = SlotProbability::new(1.0, 1.0, 1.0);
+        assert_eq!(max_prob.win, 1.0);
+        assert_eq!(max_prob.fake_win, 1.0);
+        assert_eq!(max_prob.fake_lose, 1.0);
+    }
+
+    #[test]
+    fn test_balls_config_edge_cases() {
+        // Test with zero balls
+        let zero_config = BallsConfig::new(0, 0, 0);
+        assert_eq!(zero_config.init_balls, 0);
+        assert_eq!(zero_config.incremental_balls, 0);
+        assert_eq!(zero_config.incremental_rush, 0);
+
+        // Test with large numbers
+        let large_config = BallsConfig::new(usize::MAX, usize::MAX, usize::MAX);
+        assert_eq!(large_config.init_balls, usize::MAX);
+        assert_eq!(large_config.incremental_balls, usize::MAX);
+        assert_eq!(large_config.incremental_rush, usize::MAX);
+    }
+
+    #[test]
+    fn test_win_lose_enum_variants() {
+        // Test Win variants
+        let default_win = Win::Default;
+        let fake_win = Win::FakeWin;
+
+        // Test Lose variants
+        let default_lose = Lose::Default;
+        let fake_lose = Lose::FakeLose;
+
+        // Test that they can be used in match statements
+        match default_win {
+            Win::Default => assert!(true),
+            Win::FakeWin => panic!("Should be Default"),
+        }
+
+        match fake_win {
+            Win::Default => panic!("Should be FakeWin"),
+            Win::FakeWin => assert!(true),
+        }
+
+        match default_lose {
+            Lose::Default => assert!(true),
+            Lose::FakeLose => panic!("Should be Default"),
+        }
+
+        match fake_lose {
+            Lose::Default => panic!("Should be FakeLose"),
+            Lose::FakeLose => assert!(true),
+        }
+    }
+}
